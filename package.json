@@ -1,0 +1,23 @@
+{
+  "name": "clayjs",
+  "version": "0.0.6",
+  "description": "clayjs mvc framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies":{
+    "express":"",
+    "sequelize":"",
+    "mysql":"",
+    "lodash":"",
+    "dustjs-linkedin ":"",
+    "consolidate":"",
+    "commander":"",
+    "connect-flash":"",
+    "async":""
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD"
+}
