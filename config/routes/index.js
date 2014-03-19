@@ -66,7 +66,7 @@ function mapFilters(controller,controllerName)
 	Filters[controllerName] = [];
 	var filters  = Filters[controllerName];
 	filters.routeBeforeFilters = {};
-	filters.routeAfterFilters = {};	
+	filters.routeAfterFilters = {};
 	verbs.forEach(function(verb){
 		filters.routeBeforeFilters[verb] = [];
 		filters.routeAfterFilters[verb] = [];
@@ -79,6 +79,9 @@ function mapFilters(controller,controllerName)
 				if(beforeFilter.actions)
 				beforeFilter.actions.forEach(function(action)
 				{
+					if(!filters.routeBeforeFilters[action]){
+						filters.routeBeforeFilters[action] = [];
+					}
 					filters.routeBeforeFilters[action].push(beforeFilter.method);
 				})
 			});
@@ -90,6 +93,9 @@ function mapFilters(controller,controllerName)
 		afterFilters.forEach(function(afterFilter){
 			afterFilter.actions.forEach(function(action)
 			{
+				if(!filters.routeAfterFilters[action]){
+					filters.routeAfterFilters[action] = [];
+				}
 				filters.routeAfterFilters[action].push(afterFilter.method);
 			})
 		});
@@ -99,13 +105,23 @@ function mapFilters(controller,controllerName)
 
 function applyFilters(map,path,key,controller,filters,alias)
 {
-	var finalpath = path;
-	if(!alias) 
-		finalpath = finalpath + map.addToPath.replace(':id',':'+key+'_id');
-	console.log(finalpath);
+	var finalpath = path.substring(0);
+	var addToPath = map.addToPath;
+	if(!alias){
+		finalpath = finalpath + addToPath.replace(':id',':'+key+'_id');
+	}
+	else if((addToPath.length == 0) && (finalpath == 'root')){
+			finalpath = '/'
+	}
 	if(controller[map.action])
 	{
 		var callbacks = [controller[map.action]];
+		if(!filters.routeBeforeFilters[map.action]){
+			filters.routeBeforeFilters[map.action] = [];
+		}
+		if(!filters.routeAfterFilters[map.action]){
+			filters.routeAfterFilters[map.action] = [];
+		}
 		if(filters.routeBeforeFilters[map.action].length > 0)
 		{
 			var before_filter_callbacks = filters.routeBeforeFilters[map.action].concat(filters.routeBeforeFilters['*']);
@@ -116,7 +132,8 @@ function applyFilters(map,path,key,controller,filters,alias)
 			var after_filter_callbacks = filters.routeAfterFilters[map.action].concat(filters.routeAfterFilters['*']);
 			callbacks.push(intermediate.bind(after_filter_callbacks));
 		}
-		app[map.verb](finalpath,callbacks); 
+	   console.log(finalpath+' '+map.verb+' ',callbacks);
+		app[map.verb](finalpath,callbacks);
 	}
 }
 
@@ -165,7 +182,7 @@ function addRoutes(express)
 	  		{
 	  			path = '';
 	  			path = key + route
-	  			if(router[key].namespace.hasOwnProperty(route))	
+	  			if(router[key].namespace.hasOwnProperty(route))
 	  				generateResourceMap(router[key].namespace[route],router[key].namespace[route].resources,path);
 	  		}
 	  	}
@@ -177,7 +194,15 @@ function addRoutes(express)
 	    {
 	    	var filters= mapFilters(require(appDir+'/app/controllers/'+router[key].to),router[key].to);
 	    	var alias = true;
-	    	applyFilters(findInMap(router[key].action), path, key, require(appDir+'/app/controllers/'+router[key].to),filters,alias);
+	    	var map = findInMap(router[key].action);
+	    	if(!map){
+	    		map = {
+					verb : router[key].verb,
+					addToPath : router[key].addToPath ? router[key].addToPath : '' ,
+					action : router[key].action
+				}
+	    	}
+	    	applyFilters(map, path, key, require(appDir+'/app/controllers/'+router[key].to),filters,alias);
 	    }
 	  }
 	}
