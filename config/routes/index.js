@@ -1,6 +1,7 @@
 var path = require('path')
   , appDir = path.dirname(require.main.filename)
-  , config_routes = require(appDir+'/config/routes');
+  , config_routes = require(appDir+'/config/routes')
+  , after_start = require('../after-start');
 var app = null;
 
 var resourceMap = [ {
@@ -41,14 +42,12 @@ var resourceMap = [ {
 function intermediate(next)
 {
 	 next.res.on('finish', (function(){
-	    console.log("Finished ");
 	    var res = next;
 	    async.map(this,function(item,callback)
 	    	{
 	    		item(res);
 	    		callback(null,res);
 	    	},function(){
-	    	console.log('All callbacks have been done');
 	    });
 	  }).bind(this));
 }
@@ -206,6 +205,7 @@ function addRoutes(express)
 	    }
 	  }
 	}
+	after_start.executeAfterStart(app);
 }
 
 module.exports.addRoutes = addRoutes;

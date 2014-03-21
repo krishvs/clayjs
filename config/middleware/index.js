@@ -1,6 +1,7 @@
 var path = require('path')
   , appDir = path.dirname(require.main.filename)
-  , fs = require('fs');
+  , fs = require('fs')
+  , routes = require('../routes');
 
 function executeMiddleware(app,server)
 {
@@ -13,7 +14,8 @@ function executeMiddleware(app,server)
 	    var middleware = require(appDir+'/app/middleware/'+file)
 	    if(middleware.execute)
 	    	middleware.execute(app,server);
-	  })
+	  });
+	routes.addRoutes(app);
 }
 
 module.exports.executeMiddleware = executeMiddleware;

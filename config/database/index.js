@@ -3,14 +3,20 @@ var path = require('path')
   , fs = require('fs')
   , path      = require('path')
   , Sequelize = require('sequelize')
-  , lodash    = require('lodash')
-  , envr      = require(appDir+'/config/database')()
-  , sequelize = new Sequelize(envr.database, envr.username, envr.password)
+  , config      = require(appDir+'/config/database')
+  , envr = config[process.argv[2]] || config.development
+  , sequelize = new Sequelize(envr.database, envr.username, envr.password, envr.options ? envr.options : null)
   , db        = {};
 
 var force = false;
 if(process.argv.indexOf('migrate') != -1){
   force = true;
+}
+
+var db = {
+  sequelize: sequelize,
+  Sequelize: Sequelize,
+  startDb : startDb
 }
 
 var walk = function(dir, done) {
@@ -37,27 +43,22 @@ var walk = function(dir, done) {
   });
 };
 
+function startDirWalk(app,server,callback){
+  walk(appDir+'/app/models', function(err, results) {
+    if (err) throw err;
+    results.filter(function(file) {
+      return (file.indexOf('.') !== 0) && (file !== 'index.js')
+    })
+    .forEach(function(file) {
+      var model = sequelize.import(file);
+      db[model.name] = model
+    })
 
-walk(appDir+'/app/models', function(err, results) {
-  if (err) throw err;
-  console.log(results);
-  results.filter(function(file) {
-    return (file.indexOf('.') !== 0) && (file !== 'index.js')
-  })
-  .forEach(function(file) {
-    var model = sequelize.import(file)
-    module.exports[model.name] = model
-  })
-
-  Object.keys(db).forEach(function(modelName) {
-    if ('associate' in db[modelName]) {
-      module.exports[modelName].associate(db)
-    }
-  })
-
-});
-
-function startDb(){
+    Object.keys(db).forEach(function(modelName) {
+      if ('associate' in db[modelName]) {
+        db[modelName].associate(db)
+      }
+    })
    sequelize
     .sync({ force : force})
     .complete(function(err) {
@@ -67,14 +68,19 @@ function startDb(){
       }
       else{
         console.log('Run all the db migrations');
+        var parent  =  require('../../index.js')
+        parent.set(db,db);
+        callback(app,server)
       }
     });
+  });
+}
+
+
+function startDb(app,server,callback){
+   startDirWalk(app,server,callback);
 }
 
 
 
-module.exports = {
-  sequelize: sequelize,
-  Sequelize: Sequelize,
-  startDb : startDb
-}
+module.exports = db

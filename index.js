@@ -12,7 +12,6 @@ var path = require('path')
 
 var app = express();
 
-
 function setViewEngine()
 {
   app.engine(view.engine,cons[view.engine]);
@@ -32,12 +31,9 @@ function start()
   app.use(express.bodyParser());
   app.use(express.session({ secret: 'so secret' }));
   app.use(express.static(appDir+'/public'));
-  db.startDb();
-  middleware.executeMiddleware(app,server);
-  routes.addRoutes(app);
-  after_start.executeAfterStart(app);
-  console.log('The app is listening in the port '+envr.port)
   app.set('views',appDir+'/app/views');
+  db.startDb(app,server,middleware.executeMiddleware);
+  console.log('The app is listening in the port '+envr.port)
 }
 
 function set(key,value)
