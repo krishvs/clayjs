@@ -1,6 +1,6 @@
 {
   "name": "clayjs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "clayjs mvc framework",
   "main": "index.js",
   "scripts": {
